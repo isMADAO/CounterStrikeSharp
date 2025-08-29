@@ -60,7 +60,7 @@ public static class VirtualFunctions
 
     public static Action<IntPtr, IntPtr> CBaseEntity_DispatchSpawn = CBaseEntity_DispatchSpawnFunc.Invoke;
 
-    public static MemoryFunctionVoid<CBasePlayerController, CBasePlayerPawn, bool, bool> CBasePlayerController_SetPawnFunc =
+    public static MemoryFunctionVoid<CBasePlayerController, CBasePlayerPawn, bool, bool, bool, bool> CBasePlayerController_SetPawnFunc =
         new(GameData.GetSignature("CBasePlayerController_SetPawn"));
 
     public static MemoryFunctionVoid<CEntityInstance, CTakeDamageInfo> CBaseEntity_TakeDamageOldFunc =

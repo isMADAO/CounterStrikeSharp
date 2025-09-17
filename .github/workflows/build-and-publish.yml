@@ -176,7 +176,8 @@ jobs:
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'isMADAO/CounterStrikeSharp' }}
     permissions:
       contents: write
-    needs: ["setup", "build_linux", "build_windows", "build_managed"]
+    # needs: ["setup", "build_linux", "build_windows", "build_managed"]
+    needs: ["setup", "build_windows", "build_managed"]
     runs-on: ubuntu-latest
     steps:
       - name: Prepare env

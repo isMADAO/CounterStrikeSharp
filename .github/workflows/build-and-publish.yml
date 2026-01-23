@@ -87,39 +87,39 @@ jobs:
           name: counterstrikesharp-windows-${{ needs.setup.outputs.gitversion_semver }}
           path: build/output/
 
-  build_linux:
-    needs: setup
-    runs-on: ubuntu-latest
-    # Could not figure out how to run in a container only on some matrix paths, so I've split it out into its own build.
-    container:
-      image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
-    steps:
-      - name: Prepare env
-        shell: bash
-        run: |
-          echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
-          echo "SEMVER=${{ needs.setup.outputs.gitversion_semver }}" >> $GITHUB_ENV
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-
-      - name: Build
-        run: |
-          mkdir -p build
-          cd build
-          cmake -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ..
-          cmake --build . --config ${{env.BUILD_TYPE}} -- -j16
-
-      - name: Clean build directory
-        run: |
-          mkdir build/output/
-          mv build/addons build/output
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: counterstrikesharp-linux-${{ needs.setup.outputs.gitversion_semver }}
-          path: build/output/
+  # build_linux:
+  #   needs: setup
+  #   runs-on: ubuntu-latest
+  #   # Could not figure out how to run in a container only on some matrix paths, so I've split it out into its own build.
+  #   container:
+  #     image: registry.gitlab.steamos.cloud/steamrt/sniper/sdk:latest
+  #   steps:
+  #     - name: Prepare env
+  #       shell: bash
+  #       run: |
+  #         echo "GITHUB_SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+  #         echo "SEMVER=${{ needs.setup.outputs.gitversion_semver }}" >> $GITHUB_ENV
+  #
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: "recursive"
+  #
+  #     - name: Build
+  #       run: |
+  #         mkdir -p build
+  #         cd build
+  #         cmake -G Ninja -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ..
+  #         cmake --build . --config ${{env.BUILD_TYPE}} -- -j16
+  #
+  #     - name: Clean build directory
+  #       run: |
+  #         mkdir build/output/
+  #         mv build/addons build/output
+  #
+  #     - uses: actions/upload-artifact@v4
+  #       with:
+  #         name: counterstrikesharp-linux-${{ needs.setup.outputs.gitversion_semver }}
+  #         path: build/output/
 
   build_managed:
     needs: setup
@@ -175,7 +175,7 @@ jobs:
     if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'isMADAO/CounterStrikeSharp' }}
     permissions:
       contents: write
-    needs: ["setup", "build_linux", "build_windows", "build_managed"]
+    needs: ["setup", "build_windows", "build_managed"]
     runs-on: ubuntu-latest
     steps:
       - name: Prepare env
@@ -194,40 +194,27 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: counterstrikesharp-linux-${{ needs.setup.outputs.gitversion_semver }}
-          path: build/linux
-
-      - uses: actions/download-artifact@v4
-        with:
           name: counterstrikesharp-api-${{ needs.setup.outputs.gitversion_semver }}
           path: build/api
 
       # TODO: This stuff should really be in a matrix
       - name: Add API to Artifacts
         run: |
-          mkdir -p build/linux/addons/counterstrikesharp/api
           mkdir -p build/windows/addons/counterstrikesharp/api
-          cp -r build/api/net8.0/publish/* build/linux/addons/counterstrikesharp/api
           cp -r build/api/net8.0/publish/* build/windows/addons/counterstrikesharp/api
 
       - name: Zip Builds
         run: |
-          (cd build/linux && zip -qq -r ../../counterstrikesharp-linux-${{ needs.setup.outputs.gitversion_semver }}.zip *)
           (cd build/windows && zip -qq -r ../../counterstrikesharp-windows-${{ needs.setup.outputs.gitversion_semver }}.zip *)
 
       - name: Add dotnet runtime
         run: |
-          mkdir -p build/linux/addons/counterstrikesharp/dotnet
-          curl -s -L https://download.visualstudio.microsoft.com/download/pr/c1371dc2-eed2-47be-9af3-ae060dbe3c7d/bd509e0a87629764ed47608466d183e6/aspnetcore-runtime-8.0.3-linux-x64.tar.gz \
-          | tar xvz -C build/linux/addons/counterstrikesharp/dotnet
-
           mkdir -p build/windows/addons/counterstrikesharp/dotnet
           curl -s -L https://download.visualstudio.microsoft.com/download/pr/086d1dd6-57a5-437a-a1ef-549cf702fb48/dd4a8fe6c53a1016a414d6f2925c1323/aspnetcore-runtime-8.0.3-win-x64.zip -o dotnet.zip
           unzip -qq dotnet.zip -d build/windows/addons/counterstrikesharp/dotnet
 
       - name: Zip Builds
         run: |
-          (cd build/linux && zip -qq -r ../../counterstrikesharp-with-runtime-linux-${{ needs.setup.outputs.gitversion_semver }}.zip *)
           (cd build/windows && zip -qq -r ../../counterstrikesharp-with-runtime-windows-${{ needs.setup.outputs.gitversion_semver }}.zip *)
       
       - name: Release
@@ -239,8 +226,6 @@ jobs:
           files: |
             counterstrikesharp-windows-${{ needs.setup.outputs.gitversion_semver }}.zip
             counterstrikesharp-with-runtime-windows-${{ needs.setup.outputs.gitversion_semver }}.zip
-            counterstrikesharp-linux-${{ needs.setup.outputs.gitversion_semver }}.zip
-            counterstrikesharp-with-runtime-linux-${{ needs.setup.outputs.gitversion_semver }}.zip
 
       - name: Publish NuGet package
         if: ${{ vars.PUBLISH_NUGET == 'true' }}
